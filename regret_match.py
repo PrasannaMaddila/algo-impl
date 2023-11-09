@@ -15,9 +15,6 @@ class RPSAgent:
         self.name = name
 
         # initialising the actions first
-        self.ROCK = 0
-        self.PAPER = 1
-        self.SCISSORS = 2
         self.num_actions = 3
 
         # then the strategies
@@ -30,7 +27,8 @@ class RPSAgent:
 
     def getStrategy(self) -> np.array:
         """Get the current strategy from the cumulative regret"""
-        self.strategy[self.strategy < 0] = 0
+        self.strategy = self.regret_sum
+        self.strategy[ self.strategy < 0 ] = 0
         normalisingSum = np.sum(self.strategy)
         if normalisingSum > 0:
             self.strategy = self.strategy / normalisingSum
@@ -41,7 +39,7 @@ class RPSAgent:
 
     def getActionFromStrategy(self, strategy: np.array) -> int:
         """Sample actions from space"""
-        return np.random.choice([self.ROCK, self.PAPER, self.SCISSORS], 1, p=strategy)[
+        return np.random.choice([0,1,2], 1, p=strategy)[
             0
         ]
 
@@ -50,19 +48,13 @@ class RPSAgent:
         the final averaged strategy"""
 
         # Get learner and heuristic actions
-        # strategy = self.getStrategy()
-        # myAction = self.getActionFromStrategy(strategy)
         myAction = actions[self.name]
-        otherAction = [action for name, action in actions.items() if name != self.name][
-            0
-        ]
+        otherAction = next(action for name, action in actions.items() if name != self.name)
 
         # compute action utilities
         actionUtility = np.zeros_like(self.regret_sum)
-        actionUtility[myAction] = rewards[self.name]
-        actionUtility[otherAction] = -rewards[self.name]
-        # actionUtility[0 if otherAction == self.num_actions - 1 else otherAction + 1] = 1
-        # actionUtility[self.num_actions - 1 if otherAction == 0 else otherAction - 1] = -1
+        actionUtility[0 if otherAction == self.num_actions - 1 else otherAction + 1] = 1
+        actionUtility[self.num_actions - 1 if otherAction == 0 else otherAction - 1] = -1
 
         # Assign regrets to everyone
         for a in range(self.num_actions):
@@ -72,7 +64,7 @@ class RPSAgent:
         """Calculates the average strategy and returns it"""
         averageSum = np.zeros_like(self.cumul_strategy)
         normalisingSum = np.sum(self.cumul_strategy)
-        if normalisingSum >= 0:
+        if normalisingSum > 0:
             return self.cumul_strategy / normalisingSum
         else:
             return np.array([1 / self.num_actions] * self.num_actions)
@@ -103,6 +95,10 @@ if __name__ == "__main__":
             trainer.update(actions, rewards)
     
     # print learned strategies
-    for agent, trainer in trainers.items():
-        print(trainer, trainer.getAverageStrategy())
+    averageStrategies = {
+            trainer.name: trainer.getAverageStrategy()
+            for trainer in trainers.values()
+    }
+    for name, strategy in averageStrategies.items():
+        print(name, ': ', strategy)
     env.close()
