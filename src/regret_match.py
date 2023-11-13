@@ -3,7 +3,9 @@ Rock-Paper-Scissors environment from PettingZoo"""
 
 import argparse
 import numpy as np
-from pettingzoo.classic import rps_v2
+import numpy.typing as npt
+from typing import Dict
+from pettingzoo.classic import rps_v2  # type: ignore
 
 
 class RPSAgent:
@@ -24,7 +26,7 @@ class RPSAgent:
         self.strategy = np.random.rand(self.num_actions)
         self.strategy = self.strategy / np.sum(self.strategy)
 
-    def getStrategy(self) -> np.array:
+    def getStrategy(self) -> npt.NDArray:
         """Get the current strategy from the cumulative regret"""
         self.strategy = self.regret_sum
         self.strategy[self.strategy < 0] = 0
@@ -36,11 +38,11 @@ class RPSAgent:
         self.cumul_strategy += self.strategy
         return self.strategy
 
-    def getActionFromStrategy(self, strategy: np.array) -> int:
+    def getActionFromStrategy(self, strategy: npt.NDArray):
         """Sample actions from space"""
-        return np.random.choice([0, 1, 2], 1, p=strategy)[0]
+        return np.random.choice([0, 1, 2], 1, p=strategy.tolist())[0]
 
-    def update(self, actions: np.array, rewards: np.array) -> np.array:
+    def update(self, actions: Dict[str, int], rewards: Dict[str, float]) -> None:
         """Trains for a given number of iterations, and returns
         the final averaged strategy"""
 
@@ -61,7 +63,7 @@ class RPSAgent:
         for a in range(self.num_actions):
             self.regret_sum[a] += actionUtility[a] - actionUtility[myAction]
 
-    def getAverageStrategy(self) -> np.array:
+    def getAverageStrategy(self) -> npt.NDArray:
         """Calculates the average strategy and returns it"""
         averageSum = np.zeros_like(self.cumul_strategy)
         normalisingSum = np.sum(self.cumul_strategy)
